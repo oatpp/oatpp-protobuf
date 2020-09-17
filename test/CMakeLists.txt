@@ -20,8 +20,28 @@ add_dependencies(module-tests ${OATPP_THIS_MODULE_NAME})
 
 target_link_oatpp(module-tests)
 
+## proto-gen
+
+set(PROTOLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/protolib)
+
+execute_process(
+        COMMAND bash "${PROTOLIB_DIR}/update_protolib.sh" "${PROTOLIB_DIR}"
+)
+
+target_include_directories(module-tests
+        PUBLIC ${PROTOLIB_DIR}/src
+)
+
+## link libs
+
+find_library(PROTOLIB_LIBRARY
+        NAMES test-protolib
+        HINTS ${PROTOLIB_DIR}/build
+)
+
 target_link_libraries(module-tests
         PRIVATE ${OATPP_THIS_MODULE_NAME}
+        PRIVATE ${PROTOLIB_LIBRARY}
 )
 
 ## TODO link dependencies here (if some)

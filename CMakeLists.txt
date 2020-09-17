@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 ## use these variables to configure module installation
 
 set(OATPP_THIS_MODULE_NAME oatpp-protobuf) ## name of the module (also name of folders in installation dirs)
-set(OATPP_THIS_MODULE_VERSION "1.1.0") ## version of the module (also sufix of folders in installation dirs)
+set(OATPP_THIS_MODULE_VERSION "1.2.0") ## version of the module (also sufix of folders in installation dirs)
 set(OATPP_THIS_MODULE_LIBRARIES oatpp-protobuf) ## list of libraries to find when find_package is called
 set(OATPP_THIS_MODULE_TARGETS oatpp-protobuf) ## list of targets to install
 set(OATPP_THIS_MODULE_DIRECTORIES oatpp-protobuf) ## list of directories to install
@@ -92,7 +92,11 @@ endif()
 message("\n############################################################################")
 message("## ${OATPP_THIS_MODULE_NAME} module. Resolving dependencies...\n")
 
-## TODO find dependecies here (if some)
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/module")
+find_package(Protobuf REQUIRED)
+
+message("Protobuf_INCLUDE_DIRS=${Protobuf_INCLUDE_DIRS}")
+message("Protobuf_LIBRARIES=${Protobuf_LIBRARIES}")
 
 message("\n############################################################################\n")
 

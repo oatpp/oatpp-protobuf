@@ -20,7 +20,9 @@ target_include_directories(${OATPP_THIS_MODULE_NAME}
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
-## TODO link dependencies here (if some)
+target_link_libraries(${OATPP_THIS_MODULE_NAME}
+        PUBLIC protobuf::libprotobuf
+)
 
 #######################################################################################################
 ## install targets

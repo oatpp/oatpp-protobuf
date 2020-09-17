@@ -3,8 +3,10 @@
 
 #include "oatpp-protobuf/Object.hpp"
 
-#include "oatpp/core/concurrency/SpinLock.hpp"
-#include "oatpp/core/base/Environment.hpp"
+#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
+
+
+#include "test.pb.h"
 
 #include <iostream>
 
@@ -16,7 +18,29 @@ public:
   {}
 
   void onRun() override {
-    // TODO write correct  tests
+
+    oatpp::protobuf::Object<test::ImageRotateRequest> image = std::make_shared<test::ImageRotateRequest>();
+
+    image->set_rotation(test::ImageRotateRequest_Rotation_NINETY_DEG);
+    image->mutable_image()->set_width(320);
+    image->mutable_image()->set_height(240);
+
+    oatpp::parser::json::mapping::ObjectMapper mapper;
+
+    {
+      auto config = mapper.getSerializer()->getConfig();
+      config->enableInterpretations = {"protobuf"};
+      config->useBeautifier = true;
+    }
+
+    {
+      auto config = mapper.getDeserializer()->getConfig();
+      config->enableInterpretations = {"protobuf"};
+    }
+
+    auto json = mapper.writeToString(image);
+
+    OATPP_LOGD(TAG, "json='%s'", json->c_str());
 
   }
 };
