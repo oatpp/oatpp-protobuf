@@ -25,9 +25,7 @@
 #ifndef oatpp_protobuf_Object_hpp
 #define oatpp_protobuf_Object_hpp
 
-#include "oatpp/core/Types.hpp"
-
-#include <google/protobuf/Message.h>
+#include "reflection/DynamicObject.hpp"
 
 namespace oatpp { namespace protobuf {
 
@@ -42,16 +40,6 @@ namespace __class {
   class Object;
 }
 
-class ProtoUtils {
-public:
-  static oatpp::Void protoValueToOatppValue(const google::protobuf::Reflection* refl,
-                                            const google::protobuf::FieldDescriptor *field,
-                                            const google::protobuf::Message &proto);
-
-  static oatpp::Fields<oatpp::Any> protoToOatppMap(const google::protobuf::Message &proto);
-  static oatpp::Fields<oatpp::Any> protoToOatppMap(const std::shared_ptr<google::protobuf::Message> &proto);
-};
-
 template <class T>
 using Object = oatpp::data::mapping::type::ObjectWrapper<T, __class::Object<T>>;
 
@@ -61,14 +49,15 @@ namespace __class {
   class Object : public AbstractObject {
   private:
 
-    class Inter : public oatpp::Type::Interpretation<oatpp::protobuf::Object<T>, oatpp::Fields<oatpp::Any>>  {
+    class Inter : public oatpp::Type::Interpretation<oatpp::protobuf::Object<T>, oatpp::Void>  {
     public:
 
-      oatpp::Fields<oatpp::Any> interpret(const oatpp::protobuf::Object<T>& value) const override {
-        return ProtoUtils::protoToOatppMap(value.getPtr());
+      oatpp::Void interpret(const oatpp::protobuf::Object<T>& value) const override {
+        auto ptr = reflection::DynamicObject::createShared(*value.getPtr());
+        return oatpp::Void(ptr, ptr->getClass()->getType());
       }
 
-      oatpp::protobuf::Object<T> reproduce(const oatpp::Fields<oatpp::Any>& value) const override {
+      oatpp::protobuf::Object<T> reproduce(const oatpp::Void& value) const override {
         return nullptr;
       }
 
