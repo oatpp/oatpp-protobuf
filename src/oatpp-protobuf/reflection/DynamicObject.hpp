@@ -52,6 +52,12 @@ public:
 
   static DynamicClass* registryGetClass(const std::string& name);
 
+  template<class T>
+  static DynamicClass* registryGetClass() {
+    const google::protobuf::Descriptor* desc = T::GetDescriptor();
+    return registryGetClass(desc->full_name());
+  }
+
   const std::string getName() const;
 
   std::shared_ptr<google::protobuf::Message> createProto() const;
@@ -66,6 +72,11 @@ private:
   static oatpp::Void protoValueToOatppValue(const google::protobuf::Reflection* refl,
                                             const google::protobuf::FieldDescriptor* field,
                                             const google::protobuf::Message& proto);
+
+  void OatppValueToProtoValue(const google::protobuf::Reflection* refl,
+                              const google::protobuf::FieldDescriptor* field,
+                              google::protobuf::Message* proto,
+                              int index) const;
 private:
   DynamicClass* m_class;
   std::vector<oatpp::Void> m_fields;
@@ -75,6 +86,9 @@ private:
 public:
 
   static std::shared_ptr<DynamicObject> createShared(const google::protobuf::Message& proto);
+
+  void cloneToProto(google::protobuf::Message& proto) const;
+  std::shared_ptr<google::protobuf::Message> toProto() const;
 
   DynamicClass* getClass() const;
 

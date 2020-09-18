@@ -22,4 +22,5 @@ message ImageRotateRequest {
 
     Rotation rotation = 1;
     Image image = 2;
+    repeated int32 intArr = 3;
 }

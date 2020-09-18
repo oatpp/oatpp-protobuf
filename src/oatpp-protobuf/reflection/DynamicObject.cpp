@@ -139,16 +139,30 @@ oatpp::Void DynamicObject::protoValueToOatppValue(const google::protobuf::Reflec
       return oatpp::String(str.data(), str.size(), true);
     }
 
-    case google::protobuf::FieldDescriptor::TYPE_INT32: return oatpp::Int32(refl->GetInt32(proto, field));
-    case google::protobuf::FieldDescriptor::TYPE_SINT32: return oatpp::Int32(refl->GetInt32(proto, field));
-    case google::protobuf::FieldDescriptor::TYPE_SFIXED32: return oatpp::Int32(refl->GetInt32(proto, field));
-    case google::protobuf::FieldDescriptor::TYPE_UINT32: return oatpp::UInt32(refl->GetUInt32(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_INT32:
+    case google::protobuf::FieldDescriptor::TYPE_SINT32:
+    case google::protobuf::FieldDescriptor::TYPE_SFIXED32: {
+      if (field->is_repeated()) {
+        oatpp::Vector<oatpp::Int32> arr({});
+        int size = refl->FieldSize(proto, field);
+        for (int i = 0; i < size; i++) {
+          arr->push_back(refl->GetRepeatedInt32(proto, field, i));
+        }
+        return arr;
+      } else if(refl->HasField(proto, field)) {
+        return oatpp::Int32(refl->GetInt32(proto, field));
+      }
+      return oatpp::Int32();
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_UINT32:
     case google::protobuf::FieldDescriptor::TYPE_FIXED32: return oatpp::UInt32(refl->GetUInt32(proto, field));
 
-    case google::protobuf::FieldDescriptor::TYPE_INT64: return oatpp::Int64(refl->GetInt64(proto, field));
-    case google::protobuf::FieldDescriptor::TYPE_SINT64: return oatpp::Int64(refl->GetInt64(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_INT64:
+    case google::protobuf::FieldDescriptor::TYPE_SINT64:
     case google::protobuf::FieldDescriptor::TYPE_SFIXED64: return oatpp::Int64(refl->GetInt64(proto, field));
-    case google::protobuf::FieldDescriptor::TYPE_UINT64: return oatpp::UInt64(refl->GetUInt64(proto, field));
+
+    case google::protobuf::FieldDescriptor::TYPE_UINT64:
     case google::protobuf::FieldDescriptor::TYPE_FIXED64: return oatpp::UInt64(refl->GetUInt64(proto, field));
 
     case google::protobuf::FieldDescriptor::TYPE_FLOAT: return oatpp::Float32(refl->GetFloat(proto, field));
@@ -165,6 +179,100 @@ oatpp::Void DynamicObject::protoValueToOatppValue(const google::protobuf::Reflec
     case google::protobuf::FieldDescriptor::TYPE_MESSAGE: {
       auto ptr = DynamicObject::createShared(refl->GetMessage(proto, field));
       return oatpp::Void(ptr, ptr->getClass()->getType());
+    }
+
+    // case google::protobuf::FieldDescriptor::TYPE_GROUP: deprecated
+
+    default:
+      throw std::runtime_error("[oatpp::protobuf::reflection::DynamicObject::protoValueToOatppValue()]: "
+                               "Error. Unknown type - " + std::string(field->type_name()));
+  }
+
+}
+
+void DynamicObject::OatppValueToProtoValue(const google::protobuf::Reflection* refl,
+                                           const google::protobuf::FieldDescriptor* field,
+                                           google::protobuf::Message* proto,
+                                           int index) const
+{
+
+  const auto& value = m_fields[index];
+  if(!value) return;
+
+  switch(field->type()) {
+
+    case google::protobuf::FieldDescriptor::TYPE_STRING:
+    case google::protobuf::FieldDescriptor::TYPE_BYTES: {
+      const auto& str = value.staticCast<oatpp::String>();
+      refl->SetString(proto, field, str->std_str());
+      break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_INT32:
+    case google::protobuf::FieldDescriptor::TYPE_SINT32:
+    case google::protobuf::FieldDescriptor::TYPE_SFIXED32: {
+      if(field->is_repeated()) {
+        const auto& arr = value.staticCast<oatpp::Vector<oatpp::Int32>>();
+        refl->ClearField(proto, field);
+        for(auto& val : *arr) {
+          refl->AddInt32(proto, field, *val);
+        }
+      } else {
+        const auto& val = value.staticCast<oatpp::Int32>();
+        refl->SetInt32(proto, field, *val);
+      }
+      break;
+    }
+    case google::protobuf::FieldDescriptor::TYPE_UINT32:
+    case google::protobuf::FieldDescriptor::TYPE_FIXED32: {
+      const auto& val = value.staticCast<oatpp::UInt32>();
+      refl->SetUInt32(proto, field, *val);
+      break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_INT64:
+    case google::protobuf::FieldDescriptor::TYPE_SINT64:
+    case google::protobuf::FieldDescriptor::TYPE_SFIXED64: {
+      const auto& val = value.staticCast<oatpp::Int64>();
+      refl->SetInt64(proto, field, *val);
+      break;
+    }
+    case google::protobuf::FieldDescriptor::TYPE_UINT64:
+    case google::protobuf::FieldDescriptor::TYPE_FIXED64: {
+      const auto& val = value.staticCast<oatpp::UInt64>();
+      refl->SetUInt64(proto, field, *val);
+      break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_FLOAT: {
+      const auto& val = value.staticCast<oatpp::Float32>();
+      refl->SetFloat(proto, field, *val);
+      break;
+    }
+    case google::protobuf::FieldDescriptor::TYPE_DOUBLE: {
+      const auto& val = value.staticCast<oatpp::Float64>();
+      refl->SetDouble(proto, field, *val);
+      break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_BOOL: {
+      const auto& val = value.staticCast<oatpp::Boolean>();
+      refl->SetBool(proto, field, *val);
+      break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_ENUM: {
+      const auto& val = value.staticCast<oatpp::String>();
+      const google::protobuf::EnumDescriptor* ed = field->enum_type();
+      refl->SetEnum(proto, field, ed->FindValueByName(val->std_str()));
+      break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_MESSAGE: {
+      DynamicObject* obj = static_cast<DynamicObject*>(value.get());
+      auto message = refl->MutableMessage(proto, field);
+      obj->cloneToProto(*message);
+      break;
     }
 
     // case google::protobuf::FieldDescriptor::TYPE_GROUP: deprecated
@@ -202,6 +310,31 @@ std::shared_ptr<DynamicObject> DynamicObject::createShared(const google::protobu
   auto ptr = std::shared_ptr<DynamicObject>(new DynamicObject(clazz));
   ptr->initFromProto(proto);
   return ptr;
+}
+
+void DynamicObject::cloneToProto(google::protobuf::Message& proto) const {
+
+  const google::protobuf::Descriptor* desc = proto.GetDescriptor();
+  const google::protobuf::Reflection* refl = proto.GetReflection();
+
+  int fieldCount = desc->field_count();
+
+  if(fieldCount != m_fields.size()) {
+    throw std::runtime_error("[oatpp::protobuf::reflection::DynamicObject::toProto()]: Error."
+                             "Invalid state.");
+  }
+
+  for(int i = 0; i < fieldCount; i++) {
+    const google::protobuf::FieldDescriptor* field = desc->field(i);
+    OatppValueToProtoValue(refl, field, &proto, i);
+  }
+
+}
+
+std::shared_ptr<google::protobuf::Message> DynamicObject::toProto() const {
+  auto proto = m_class->createProto();
+  cloneToProto(*proto);
+  return proto;
 }
 
 DynamicClass* DynamicObject::getClass() const {

@@ -22,8 +22,12 @@ public:
     oatpp::protobuf::Object<test::ImageRotateRequest> image = std::make_shared<test::ImageRotateRequest>();
 
     image->set_rotation(test::ImageRotateRequest_Rotation_NINETY_DEG);
-    image->mutable_image()->set_width(320);
+    image->mutable_image()->set_data("Hello World!");
+    image->mutable_image()->set_width(-1);
     image->mutable_image()->set_height(240);
+    image->add_intarr(1);
+    image->add_intarr(2);
+    image->add_intarr(3);
 
     oatpp::parser::json::mapping::ObjectMapper mapper;
 
@@ -38,9 +42,15 @@ public:
       config->enableInterpretations = {"protobuf"};
     }
 
-    auto json = mapper.writeToString(image);
+    auto json1 = mapper.writeToString(image);
+    OATPP_LOGD(TAG, "json1='%s'", json1->c_str());
 
-    OATPP_LOGD(TAG, "json='%s'", json->c_str());
+    auto clone = mapper.readFromString<oatpp::protobuf::Object<test::ImageRotateRequest>>(json1);
+
+    clone->mutable_image()->set_color(true);
+
+    auto json2 = mapper.writeToString(clone);
+    OATPP_LOGD(TAG, "json2='%s'", json2->c_str());
 
   }
 };

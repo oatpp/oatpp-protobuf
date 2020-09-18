@@ -49,16 +49,27 @@ namespace __class {
   class Object : public AbstractObject {
   private:
 
-    class Inter : public oatpp::Type::Interpretation<oatpp::protobuf::Object<T>, oatpp::Void>  {
+    class Inter : public oatpp::Type::AbstractInterpretation {
     public:
 
-      oatpp::Void interpret(const oatpp::protobuf::Object<T>& value) const override {
+      oatpp::Void toInterpretation(const Void& originalValue) const {
+        const auto& value = originalValue.staticCast<oatpp::protobuf::Object<T>>();
         auto ptr = reflection::DynamicObject::createShared(*value.getPtr());
         return oatpp::Void(ptr, ptr->getClass()->getType());
       }
 
-      oatpp::protobuf::Object<T> reproduce(const oatpp::Void& value) const override {
+      oatpp::Void fromInterpretation(const Void& interValue) const {
+        if(interValue) {
+          auto obj = static_cast<reflection::DynamicObject*>(interValue.get());
+          auto ptr = obj->toProto();
+          return oatpp::Void(ptr, Object::getType());
+        }
         return nullptr;
+      }
+
+      oatpp::Type* getInterpretationType() const {
+        auto clazz = reflection::DynamicClass::registryGetClass<T>();
+        return clazz->getType();
       }
 
     };
