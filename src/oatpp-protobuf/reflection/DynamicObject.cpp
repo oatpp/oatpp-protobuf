@@ -27,6 +27,52 @@
 namespace oatpp { namespace protobuf { namespace reflection {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Dynamic Class | PolymorphicDispatcher
+
+DynamicClass::PolymorphicDispatcher::PolymorphicDispatcher(DynamicClass* clazz)
+  : m_class(clazz)
+{}
+
+oatpp::Void DynamicClass::PolymorphicDispatcher::createObject() const {
+  auto proto = m_class->createProto();
+  auto ptr = std::shared_ptr<DynamicObject>(new DynamicObject(m_class));
+  ptr->initFromProto(*proto);
+  return oatpp::Void(ptr, m_class->getType());
+}
+
+const oatpp::Type::Properties* DynamicClass::PolymorphicDispatcher::getProperties() const {
+
+  std::lock_guard<std::mutex> lock(m_class->m_mutex);
+
+  if(m_class->m_properties == nullptr) {
+
+    auto proto = m_class->createProto();
+    auto objPtr = std::shared_ptr<DynamicObject>(new DynamicObject(m_class));
+    objPtr->initFromProto(*proto);
+    m_class->m_properties = new oatpp::Type::Properties();
+
+    const google::protobuf::Descriptor* desc = proto->GetDescriptor();
+
+    int fieldCount = desc->field_count();
+    if(fieldCount != objPtr->m_fields.size()) {
+      throw std::runtime_error("[oatpp::protobuf::reflection::DynamicClass::propertiesGetter()]: Error."
+                               "Invalid state.");
+    }
+
+    for(int i = 0; i < fieldCount; i++) {
+      const google::protobuf::FieldDescriptor* field = desc->field(i);
+      auto& objField = objPtr->m_fields[i];
+      oatpp::Type::Property* prop = new oatpp::Type::Property(i * sizeof(oatpp::Void), field->name().c_str(), objField.valueType);
+      m_class->m_properties->pushBack(prop);
+    }
+
+  }
+
+  return m_class->m_properties;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Dynamic Class
 
 std::mutex DynamicClass::REGISTRY_MUTEX;
@@ -47,41 +93,6 @@ DynamicClass* DynamicClass::registryGetClass(const std::string& name) {
     return clazz;
   }
   return it->second;
-}
-
-oatpp::Void DynamicClass::creator(DynamicClass* clazz) {
-  auto proto = clazz->createProto();
-  auto ptr = std::shared_ptr<DynamicObject>(new DynamicObject(clazz));
-  ptr->initFromProto(*proto);
-  return oatpp::Void(ptr, clazz->getType());
-}
-
-oatpp::Type::Properties* DynamicClass::propertiesGetter(DynamicClass* clazz) {
-  std::lock_guard<std::mutex> lock(clazz->m_mutex);
-  if(clazz->m_properties == nullptr) {
-
-    auto proto = clazz->createProto();
-    auto objPtr = std::shared_ptr<DynamicObject>(new DynamicObject(clazz));
-    objPtr->initFromProto(*proto);
-    clazz->m_properties = new oatpp::Type::Properties();
-
-    const google::protobuf::Descriptor* desc = proto->GetDescriptor();
-
-    int fieldCount = desc->field_count();
-    if(fieldCount != objPtr->m_fields.size()) {
-      throw std::runtime_error("[oatpp::protobuf::reflection::DynamicClass::propertiesGetter()]: Error."
-                               "Invalid state.");
-    }
-
-    for(int i = 0; i < fieldCount; i++) {
-      const google::protobuf::FieldDescriptor* field = desc->field(i);
-      auto& objField = objPtr->m_fields[i];
-      oatpp::Type::Property* prop = new oatpp::Type::Property(i * sizeof(oatpp::Void), field->name().c_str(), objField.valueType);
-      clazz->m_properties->pushBack(prop);
-    }
-
-  }
-  return clazz->m_properties;
 }
 
 const std::string DynamicClass::getName() const {
@@ -110,9 +121,7 @@ const oatpp::Type* DynamicClass::getType() {
     m_type = new oatpp::Type(
       oatpp::data::mapping::type::__class::AbstractObject::CLASS_ID,
       m_name.c_str(),
-      std::bind(creator, this),
-      std::bind(propertiesGetter, this),
-      nullptr,
+      new PolymorphicDispatcher(this),
       {}
     );
   }

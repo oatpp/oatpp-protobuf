@@ -36,6 +36,19 @@ class DynamicClass {
 private:
   static std::mutex REGISTRY_MUTEX;
   static std::unordered_map<std::string, DynamicClass*> REGISTRY;
+public:
+
+  class PolymorphicDispatcher : public oatpp::data::mapping::type::__class::AbstractObject::PolymorphicDispatcher {
+  private:
+    DynamicClass* m_class;
+  public:
+
+    PolymorphicDispatcher(DynamicClass* clazz);
+
+    oatpp::Void createObject() const override;
+    const oatpp::Type::Properties* getProperties() const override;
+  };
+
 private:
   std::mutex m_mutex;
   std::string m_name;
@@ -43,9 +56,6 @@ private:
   oatpp::Type::Properties* m_properties;
 private:
   DynamicClass(const std::string& name);
-private:
-  static oatpp::Void creator(DynamicClass* clazz);
-  static oatpp::Type::Properties* propertiesGetter(DynamicClass* clazz);
 public:
 
   static DynamicClass* registryGetClass(const std::string& name);
