@@ -32,6 +32,7 @@ namespace oatpp { namespace protobuf { namespace reflection {
 
 typedef google::protobuf::Reflection Reflection;
 typedef google::protobuf::FieldDescriptor FieldDescriptor;
+typedef google::protobuf::EnumDescriptor EnumDescriptor;
 typedef google::protobuf::Message Message;
 
 template<typename T>
@@ -315,6 +316,45 @@ struct TypeHelper <bool> {
 
   static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     return refl->GetRepeatedBool(proto, field, index);
+  }
+
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
+  }
+
+};
+
+template<>
+struct TypeHelper <EnumDescriptor> {
+
+  typedef EnumDescriptor CT;
+  typedef oatpp::String OT;
+
+  static void setFieldValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, const OT& value) {
+    const auto& val = value.staticCast<oatpp::String>();
+    const google::protobuf::EnumDescriptor* ed = field->enum_type();
+    refl->SetEnum(proto, field, ed->FindValueByName(val->std_str()));
+  }
+
+  static OT getFieldValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    const google::protobuf::EnumValueDescriptor* evd = refl->GetEnum(proto, field);
+    const auto& name = evd->name();
+    return oatpp::String(name.data(), name.size(), true);
+  }
+
+  static void addArrayItem(const Reflection* refl, const FieldDescriptor* field, Message* proto, const OT& value) {
+    const auto& val = value.staticCast<oatpp::String>();
+    const google::protobuf::EnumDescriptor* ed = field->enum_type();
+    refl->AddEnum(proto, field, ed->FindValueByName(val->std_str()));
+  }
+
+  static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
+    const google::protobuf::EnumValueDescriptor* evd = refl->GetRepeatedEnum(proto, field, index);
+    const auto& name = evd->name();
+    return oatpp::String(name.data(), name.size(), true);
   }
 
   static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {

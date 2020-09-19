@@ -148,11 +148,7 @@ oatpp::Void DynamicObject::protoValueToOatppValue(const Reflection* refl, const 
 
     case google::protobuf::FieldDescriptor::TYPE_BOOL: return Utils::getProtoField<bool>(refl, field, proto);
 
-    case google::protobuf::FieldDescriptor::TYPE_ENUM: {
-      const google::protobuf::EnumValueDescriptor* evd = refl->GetEnum(proto, field);
-      const auto& name = evd->name();
-      return oatpp::String(name.data(), name.size(), true);
-    }
+    case google::protobuf::FieldDescriptor::TYPE_ENUM: return Utils::getProtoField<EnumDescriptor>(refl, field, proto);
 
     case google::protobuf::FieldDescriptor::TYPE_MESSAGE: return Utils::getProtoField<Message>(refl, field, proto);
 
@@ -217,9 +213,7 @@ void DynamicObject::OatppValueToProtoValue(const Reflection* refl, const FieldDe
     }
 
     case google::protobuf::FieldDescriptor::TYPE_ENUM: {
-      const auto& val = value.staticCast<oatpp::String>();
-      const google::protobuf::EnumDescriptor* ed = field->enum_type();
-      refl->SetEnum(proto, field, ed->FindValueByName(val->std_str()));
+      Utils::setProtoField<EnumDescriptor>(refl, field, proto, value);
       break;
     }
 
