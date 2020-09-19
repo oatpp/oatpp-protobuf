@@ -2,6 +2,8 @@
 add_library(${OATPP_THIS_MODULE_NAME}
         oatpp-protobuf/reflection/DynamicObject.hpp
         oatpp-protobuf/reflection/DynamicObject.cpp
+        oatpp-protobuf/reflection/Utils.hpp
+        oatpp-protobuf/reflection/Utils.cpp
         oatpp-protobuf/Object.hpp
         oatpp-protobuf/Object.cpp
 )

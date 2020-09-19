@@ -25,9 +25,7 @@
 #ifndef oatpp_protobuf_reflection_DynamicObject_hpp
 #define oatpp_protobuf_reflection_DynamicObject_hpp
 
-#include "oatpp/core/Types.hpp"
-
-#include <google/protobuf/Message.h>
+#include "Utils.hpp"
 
 namespace oatpp { namespace protobuf { namespace reflection {
 
@@ -60,7 +58,7 @@ public:
 
   const std::string getName() const;
 
-  std::shared_ptr<google::protobuf::Message> createProto() const;
+  std::shared_ptr<Message> createProto() const;
 
   oatpp::Type* getType();
 
@@ -69,26 +67,20 @@ public:
 class DynamicObject : public oatpp::BaseObject {
   friend DynamicClass;
 private:
-  static oatpp::Void protoValueToOatppValue(const google::protobuf::Reflection* refl,
-                                            const google::protobuf::FieldDescriptor* field,
-                                            const google::protobuf::Message& proto);
-
-  void OatppValueToProtoValue(const google::protobuf::Reflection* refl,
-                              const google::protobuf::FieldDescriptor* field,
-                              google::protobuf::Message* proto,
-                              int index) const;
+  static oatpp::Void protoValueToOatppValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto);
+  void OatppValueToProtoValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, int index) const;
 private:
   DynamicClass* m_class;
   std::vector<oatpp::Void> m_fields;
 private:
   DynamicObject(DynamicClass* clazz);
-  void initFromProto(const google::protobuf::Message& proto);
+  void initFromProto(const Message& proto);
 public:
 
-  static std::shared_ptr<DynamicObject> createShared(const google::protobuf::Message& proto);
+  static std::shared_ptr<DynamicObject> createShared(const Message& proto);
 
-  void cloneToProto(google::protobuf::Message& proto) const;
-  std::shared_ptr<google::protobuf::Message> toProto() const;
+  void cloneToProto(Message& proto) const;
+  std::shared_ptr<Message> toProto() const;
 
   DynamicClass* getClass() const;
 

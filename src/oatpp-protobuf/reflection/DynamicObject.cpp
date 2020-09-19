@@ -88,7 +88,7 @@ const std::string DynamicClass::getName() const {
   return m_name;
 }
 
-std::shared_ptr<google::protobuf::Message> DynamicClass::createProto() const {
+std::shared_ptr<Message> DynamicClass::createProto() const {
 
   const google::protobuf::DescriptorPool* pool = google::protobuf::DescriptorPool::generated_pool();
   const google::protobuf::Descriptor* desc = pool->FindMessageTypeByName(m_name);
@@ -122,53 +122,31 @@ oatpp::Type* DynamicClass::getType() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Dynamic Object
 
-oatpp::Void DynamicObject::protoValueToOatppValue(const google::protobuf::Reflection* refl,
-                                                  const google::protobuf::FieldDescriptor* field,
-                                                  const google::protobuf::Message& proto)
-{
+oatpp::Void DynamicObject::protoValueToOatppValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
 
   switch(field->type()) {
 
-    case google::protobuf::FieldDescriptor::TYPE_STRING: {
-      const auto& str = refl->GetString(proto, field);
-      return oatpp::String(str.data(), str.size(), true);
-    }
-
-    case google::protobuf::FieldDescriptor::TYPE_BYTES: {
-      const auto& str = refl->GetString(proto, field);
-      return oatpp::String(str.data(), str.size(), true);
-    }
+    case google::protobuf::FieldDescriptor::TYPE_STRING:
+    case google::protobuf::FieldDescriptor::TYPE_BYTES: return Utils::getProtoField<std::string>(refl, field, proto);
 
     case google::protobuf::FieldDescriptor::TYPE_INT32:
     case google::protobuf::FieldDescriptor::TYPE_SINT32:
-    case google::protobuf::FieldDescriptor::TYPE_SFIXED32: {
-      if (field->is_repeated()) {
-        oatpp::Vector<oatpp::Int32> arr({});
-        int size = refl->FieldSize(proto, field);
-        for (int i = 0; i < size; i++) {
-          arr->push_back(refl->GetRepeatedInt32(proto, field, i));
-        }
-        return arr;
-      } else if(refl->HasField(proto, field)) {
-        return oatpp::Int32(refl->GetInt32(proto, field));
-      }
-      return oatpp::Int32();
-    }
+    case google::protobuf::FieldDescriptor::TYPE_SFIXED32: return Utils::getProtoField<v_int32>(refl, field, proto);
 
     case google::protobuf::FieldDescriptor::TYPE_UINT32:
-    case google::protobuf::FieldDescriptor::TYPE_FIXED32: return oatpp::UInt32(refl->GetUInt32(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_FIXED32: return Utils::getProtoField<v_uint32>(refl, field, proto);
 
     case google::protobuf::FieldDescriptor::TYPE_INT64:
     case google::protobuf::FieldDescriptor::TYPE_SINT64:
-    case google::protobuf::FieldDescriptor::TYPE_SFIXED64: return oatpp::Int64(refl->GetInt64(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_SFIXED64: return Utils::getProtoField<v_int64>(refl, field, proto);
 
     case google::protobuf::FieldDescriptor::TYPE_UINT64:
-    case google::protobuf::FieldDescriptor::TYPE_FIXED64: return oatpp::UInt64(refl->GetUInt64(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_FIXED64: return Utils::getProtoField<v_uint64>(refl, field, proto);
 
-    case google::protobuf::FieldDescriptor::TYPE_FLOAT: return oatpp::Float32(refl->GetFloat(proto, field));
-    case google::protobuf::FieldDescriptor::TYPE_DOUBLE: return oatpp::Float64(refl->GetDouble(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_FLOAT: return Utils::getProtoField<v_float32>(refl, field, proto);
+    case google::protobuf::FieldDescriptor::TYPE_DOUBLE: return Utils::getProtoField<v_float64>(refl, field, proto);
 
-    case google::protobuf::FieldDescriptor::TYPE_BOOL: return oatpp::Boolean(refl->GetBool(proto, field));
+    case google::protobuf::FieldDescriptor::TYPE_BOOL: return Utils::getProtoField<bool>(refl, field, proto);
 
     case google::protobuf::FieldDescriptor::TYPE_ENUM: {
       const google::protobuf::EnumValueDescriptor* evd = refl->GetEnum(proto, field);
@@ -190,11 +168,7 @@ oatpp::Void DynamicObject::protoValueToOatppValue(const google::protobuf::Reflec
 
 }
 
-void DynamicObject::OatppValueToProtoValue(const google::protobuf::Reflection* refl,
-                                           const google::protobuf::FieldDescriptor* field,
-                                           google::protobuf::Message* proto,
-                                           int index) const
-{
+void DynamicObject::OatppValueToProtoValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, int index) const {
 
   const auto& value = m_fields[index];
   if(!value) return;
@@ -203,61 +177,45 @@ void DynamicObject::OatppValueToProtoValue(const google::protobuf::Reflection* r
 
     case google::protobuf::FieldDescriptor::TYPE_STRING:
     case google::protobuf::FieldDescriptor::TYPE_BYTES: {
-      const auto& str = value.staticCast<oatpp::String>();
-      refl->SetString(proto, field, str->std_str());
+      Utils::setProtoField<std::string>(refl, field, proto, value);
       break;
     }
 
     case google::protobuf::FieldDescriptor::TYPE_INT32:
     case google::protobuf::FieldDescriptor::TYPE_SINT32:
     case google::protobuf::FieldDescriptor::TYPE_SFIXED32: {
-      if(field->is_repeated()) {
-        const auto& arr = value.staticCast<oatpp::Vector<oatpp::Int32>>();
-        refl->ClearField(proto, field);
-        for(auto& val : *arr) {
-          refl->AddInt32(proto, field, *val);
-        }
-      } else {
-        const auto& val = value.staticCast<oatpp::Int32>();
-        refl->SetInt32(proto, field, *val);
-      }
+      Utils::setProtoField<v_int32>(refl, field, proto, value);
       break;
     }
     case google::protobuf::FieldDescriptor::TYPE_UINT32:
     case google::protobuf::FieldDescriptor::TYPE_FIXED32: {
-      const auto& val = value.staticCast<oatpp::UInt32>();
-      refl->SetUInt32(proto, field, *val);
+      Utils::setProtoField<v_uint32>(refl, field, proto, value);
       break;
     }
 
     case google::protobuf::FieldDescriptor::TYPE_INT64:
     case google::protobuf::FieldDescriptor::TYPE_SINT64:
     case google::protobuf::FieldDescriptor::TYPE_SFIXED64: {
-      const auto& val = value.staticCast<oatpp::Int64>();
-      refl->SetInt64(proto, field, *val);
+      Utils::setProtoField<v_int64>(refl, field, proto, value);
       break;
     }
     case google::protobuf::FieldDescriptor::TYPE_UINT64:
     case google::protobuf::FieldDescriptor::TYPE_FIXED64: {
-      const auto& val = value.staticCast<oatpp::UInt64>();
-      refl->SetUInt64(proto, field, *val);
+      Utils::setProtoField<v_uint64>(refl, field, proto, value);
       break;
     }
 
     case google::protobuf::FieldDescriptor::TYPE_FLOAT: {
-      const auto& val = value.staticCast<oatpp::Float32>();
-      refl->SetFloat(proto, field, *val);
+      Utils::setProtoField<v_float32>(refl, field, proto, value);
       break;
     }
     case google::protobuf::FieldDescriptor::TYPE_DOUBLE: {
-      const auto& val = value.staticCast<oatpp::Float64>();
-      refl->SetDouble(proto, field, *val);
+      Utils::setProtoField<v_float64>(refl, field, proto, value);
       break;
     }
 
     case google::protobuf::FieldDescriptor::TYPE_BOOL: {
-      const auto& val = value.staticCast<oatpp::Boolean>();
-      refl->SetBool(proto, field, *val);
+      Utils::setProtoField<bool>(refl, field, proto, value);
       break;
     }
 
