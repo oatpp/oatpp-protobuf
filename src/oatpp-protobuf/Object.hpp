@@ -52,13 +52,13 @@ namespace __class {
     class Inter : public oatpp::Type::AbstractInterpretation {
     public:
 
-      oatpp::Void toInterpretation(const Void& originalValue) const {
+      oatpp::Void toInterpretation(const Void& originalValue) const override {
         const auto& value = originalValue.staticCast<oatpp::protobuf::Object<T>>();
         auto ptr = reflection::DynamicObject::createShared(*value.getPtr());
         return oatpp::Void(ptr, ptr->getClass()->getType());
       }
 
-      oatpp::Void fromInterpretation(const Void& interValue) const {
+      oatpp::Void fromInterpretation(const Void& interValue) const override {
         if(interValue) {
           auto obj = static_cast<reflection::DynamicObject*>(interValue.get());
           auto ptr = obj->toProto();
@@ -67,7 +67,7 @@ namespace __class {
         return nullptr;
       }
 
-      oatpp::Type* getInterpretationType() const {
+      const oatpp::Type* getInterpretationType() const override {
         auto clazz = reflection::DynamicClass::registryGetClass<T>();
         return clazz->getType();
       }

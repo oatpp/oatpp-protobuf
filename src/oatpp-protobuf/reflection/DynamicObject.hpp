@@ -60,7 +60,8 @@ public:
 
   std::shared_ptr<Message> createProto() const;
 
-  oatpp::Type* getType();
+  const oatpp::Type* getType();
+
 
 };
 

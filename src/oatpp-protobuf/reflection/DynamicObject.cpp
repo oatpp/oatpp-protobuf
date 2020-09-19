@@ -104,7 +104,7 @@ std::shared_ptr<Message> DynamicClass::createProto() const {
 
 }
 
-oatpp::Type* DynamicClass::getType() {
+const oatpp::Type* DynamicClass::getType() {
   std::lock_guard<std::mutex> lock(m_mutex);
   if(m_type == nullptr) {
     m_type = new oatpp::Type(

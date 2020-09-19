@@ -19,15 +19,20 @@ public:
 
   void onRun() override {
 
-    oatpp::protobuf::Object<test::ImageRotateRequest> image = std::make_shared<test::ImageRotateRequest>();
+    oatpp::protobuf::Object<test::ImageRotateRequest> req = std::make_shared<test::ImageRotateRequest>();
 
-    image->set_rotation(test::ImageRotateRequest_Rotation_NINETY_DEG);
-    image->mutable_image()->set_data("Hello World!");
-    image->mutable_image()->set_width(-1);
-    image->mutable_image()->set_height(240);
-    image->add_intarr(1);
-    image->add_intarr(2);
-    image->add_intarr(3);
+
+    req->add_rotation(test::ImageRotateRequest_Rotation_NINETY_DEG);
+    req->add_rotation(test::ImageRotateRequest_Rotation_ONE_EIGHTY_DEG);
+
+    auto image1 = req->add_image();
+    image1->set_data("Hello World!");
+    image1->set_width(-1);
+    image1->set_height(240);
+
+    req->add_intarr(1);
+    req->add_intarr(2);
+    req->add_intarr(3);
 
     oatpp::parser::json::mapping::ObjectMapper mapper;
 
@@ -42,12 +47,10 @@ public:
       config->enableInterpretations = {"protobuf"};
     }
 
-    auto json1 = mapper.writeToString(image);
+    auto json1 = mapper.writeToString(req);
     OATPP_LOGD(TAG, "json1='%s'", json1->c_str());
 
     auto clone = mapper.readFromString<oatpp::protobuf::Object<test::ImageRotateRequest>>(json1);
-
-    clone->mutable_image()->set_color(true);
 
     auto json2 = mapper.writeToString(clone);
     OATPP_LOGD(TAG, "json2='%s'", json2->c_str());
