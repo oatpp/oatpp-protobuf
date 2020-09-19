@@ -154,10 +154,7 @@ oatpp::Void DynamicObject::protoValueToOatppValue(const Reflection* refl, const 
       return oatpp::String(name.data(), name.size(), true);
     }
 
-    case google::protobuf::FieldDescriptor::TYPE_MESSAGE: {
-      auto ptr = DynamicObject::createShared(refl->GetMessage(proto, field));
-      return oatpp::Void(ptr, ptr->getClass()->getType());
-    }
+    case google::protobuf::FieldDescriptor::TYPE_MESSAGE: return Utils::getProtoField<Message>(refl, field, proto);
 
     // case google::protobuf::FieldDescriptor::TYPE_GROUP: deprecated
 
@@ -227,9 +224,7 @@ void DynamicObject::OatppValueToProtoValue(const Reflection* refl, const FieldDe
     }
 
     case google::protobuf::FieldDescriptor::TYPE_MESSAGE: {
-      DynamicObject* obj = static_cast<DynamicObject*>(value.get());
-      auto message = refl->MutableMessage(proto, field);
-      obj->cloneToProto(*message);
+      Utils::setProtoField<Message>(refl, field, proto, value);
       break;
     }
 

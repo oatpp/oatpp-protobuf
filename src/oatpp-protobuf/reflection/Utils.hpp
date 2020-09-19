@@ -54,7 +54,7 @@ public:
     } else if(refl->HasField(proto, field)) {
       return TypeHelper<CT>::getFieldValue(refl, field, proto);
     }
-    return typename TypeHelper<CT>::OT();
+    return oatpp::Void(nullptr, TypeHelper<CT>::getOType(refl, field, proto));
 
   }
 
@@ -100,6 +100,13 @@ struct TypeHelper <std::string> {
     return OT(str.data(), str.size(), true);
   }
 
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
+  }
+
 };
 
 template<>
@@ -122,6 +129,13 @@ struct TypeHelper <v_int32> {
 
   static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     return refl->GetRepeatedInt32(proto, field, index);
+  }
+
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
   }
 
 };
@@ -148,6 +162,13 @@ struct TypeHelper <v_uint32> {
     return refl->GetRepeatedUInt32(proto, field, index);
   }
 
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
+  }
+
 };
 
 template<>
@@ -170,6 +191,13 @@ struct TypeHelper <v_int64> {
 
   static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     return refl->GetRepeatedInt64(proto, field, index);
+  }
+
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
   }
 
 };
@@ -196,6 +224,13 @@ struct TypeHelper <v_uint64> {
     return refl->GetRepeatedUInt64(proto, field, index);
   }
 
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
+  }
+
 };
 
 template<>
@@ -218,6 +253,13 @@ struct TypeHelper <v_float32> {
 
   static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     return refl->GetRepeatedFloat(proto, field, index);
+  }
+
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
   }
 
 };
@@ -244,6 +286,13 @@ struct TypeHelper <v_float64> {
     return refl->GetRepeatedDouble(proto, field, index);
   }
 
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
+  }
+
 };
 
 template<>
@@ -266,6 +315,13 @@ struct TypeHelper <bool> {
 
   static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     return refl->GetRepeatedBool(proto, field, index);
+  }
+
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    (void) refl;
+    (void) field;
+    (void) proto;
+    return OT::Class::getType();
   }
 
 };

@@ -86,6 +86,43 @@ public:
 
 };
 
+template<>
+struct TypeHelper <Message> {
+
+  typedef Message CT;
+  //typedef oatpp::data::mapping::type::ObjectWrapper<DynamicObject, > OT;
+  typedef oatpp::Void OT;
+
+  static void setFieldValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, const OT& value) {
+    DynamicObject* obj = static_cast<DynamicObject*>(value.get());
+    auto message = refl->MutableMessage(proto, field);
+    obj->cloneToProto(*message);
+  }
+
+  static OT getFieldValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    auto ptr = DynamicObject::createShared(refl->GetMessage(proto, field));
+    return oatpp::Void(ptr, ptr->getClass()->getType());
+  }
+
+  static void addArrayItem(const Reflection* refl, const FieldDescriptor* field, Message* proto, const OT& value) {
+    DynamicObject* obj = static_cast<DynamicObject*>(value.get());
+    auto message = refl->AddMessage(proto, field);
+    obj->cloneToProto(*message);
+  }
+
+  static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
+    auto ptr = DynamicObject::createShared(refl->GetRepeatedMessage(proto, field, index));
+    return oatpp::Void(ptr, ptr->getClass()->getType());
+  }
+
+  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+    const auto& m = refl->GetMessage(proto, field);
+    const google::protobuf::Descriptor* desc = m.GetDescriptor();
+    return DynamicClass::registryGetClass(desc->full_name())->getType();
+  }
+
+};
+
 }}}
 
 #endif // oatpp_protobuf_reflection_DynamicObject_hpp
