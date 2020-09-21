@@ -46,14 +46,30 @@ public:
     PolymorphicDispatcher(DynamicClass* clazz);
 
     oatpp::Void createObject() const override;
-    const oatpp::Type::Properties* getProperties() const override;
+    const oatpp::data::mapping::type::BaseObject::Properties* getProperties() const override;
+  };
+
+public:
+
+  class VectorPolymorphicDispatcher : public oatpp::data::mapping::type::__class::AbstractVector::PolymorphicDispatcher {
+  private:
+    DynamicClass* m_class;
+  public:
+
+    VectorPolymorphicDispatcher(DynamicClass* clazz);
+
+    oatpp::Void createObject() const override;
+    void addPolymorphicItem(const oatpp::Void& object, const oatpp::Void& item) const override;
+
   };
 
 private:
-  std::mutex m_mutex;
+  std::mutex m_typeMutex;
+  std::mutex m_typeVectorMutex;
   std::string m_name;
   oatpp::Type* m_type;
-  oatpp::Type::Properties* m_properties;
+  oatpp::data::mapping::type::BaseObject::Properties* m_properties;
+  oatpp::Type* m_vectorType;
 private:
   DynamicClass(const std::string& name);
 public:
@@ -71,7 +87,7 @@ public:
   std::shared_ptr<Message> createProto() const;
 
   const oatpp::Type* getType();
-
+  const oatpp::Type* getVectorType();
 
 };
 
@@ -97,39 +113,44 @@ public:
 
 };
 
+typedef oatpp::data::mapping::type::ObjectWrapper<DynamicObject, oatpp::Void::Class> AbstractDynamicObject;
+
 template<>
 struct TypeHelper <Message> {
 
   typedef Message CT;
-  //typedef oatpp::data::mapping::type::ObjectWrapper<DynamicObject, > OT;
-  typedef oatpp::Void OT;
+  typedef AbstractDynamicObject StaticType;
 
-  static void setFieldValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, const OT& value) {
+  static void setFieldValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, const StaticType& value) {
     DynamicObject* obj = static_cast<DynamicObject*>(value.get());
     auto message = refl->MutableMessage(proto, field);
     obj->cloneToProto(*message);
   }
 
-  static OT getFieldValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
+  static StaticType getFieldValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
     auto ptr = DynamicObject::createShared(refl->GetMessage(proto, field));
-    return oatpp::Void(ptr, ptr->getClass()->getType());
+    return StaticType(ptr, ptr->getClass()->getType());
   }
 
-  static void addArrayItem(const Reflection* refl, const FieldDescriptor* field, Message* proto, const OT& value) {
+  static void addArrayItem(const Reflection* refl, const FieldDescriptor* field, Message* proto, const StaticType& value) {
     DynamicObject* obj = static_cast<DynamicObject*>(value.get());
     auto message = refl->AddMessage(proto, field);
     obj->cloneToProto(*message);
   }
 
-  static OT getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
+  static StaticType getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     auto ptr = DynamicObject::createShared(refl->GetRepeatedMessage(proto, field, index));
-    return oatpp::Void(ptr, ptr->getClass()->getType());
+    return StaticType(ptr, ptr->getClass()->getType());
   }
 
-  static const oatpp::Type* getOType(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
-    const auto& m = refl->GetMessage(proto, field);
-    const google::protobuf::Descriptor* desc = m.GetDescriptor();
-    return DynamicClass::registryGetClass(desc->full_name())->getType();
+  static const oatpp::Type* getDynamicType(const FieldDescriptor* field) {
+    auto className = field->message_type()->full_name();
+    return DynamicClass::registryGetClass(className)->getType();
+  }
+
+  static const oatpp::Type* getDynamicVectorType(const FieldDescriptor* field) {
+    auto className = field->message_type()->full_name();
+    return DynamicClass::registryGetClass(className)->getVectorType();
   }
 
 };

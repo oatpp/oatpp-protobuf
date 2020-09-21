@@ -40,16 +40,16 @@ oatpp::Void DynamicClass::PolymorphicDispatcher::createObject() const {
   return oatpp::Void(ptr, m_class->getType());
 }
 
-const oatpp::Type::Properties* DynamicClass::PolymorphicDispatcher::getProperties() const {
+const oatpp::data::mapping::type::BaseObject::Properties* DynamicClass::PolymorphicDispatcher::getProperties() const {
 
-  std::lock_guard<std::mutex> lock(m_class->m_mutex);
+  std::lock_guard<std::mutex> lock(m_class->m_typeMutex);
 
   if(m_class->m_properties == nullptr) {
 
     auto proto = m_class->createProto();
     auto objPtr = std::shared_ptr<DynamicObject>(new DynamicObject(m_class));
     objPtr->initFromProto(*proto);
-    m_class->m_properties = new oatpp::Type::Properties();
+    m_class->m_properties = new oatpp::data::mapping::type::BaseObject::Properties();
 
     const google::protobuf::Descriptor* desc = proto->GetDescriptor();
 
@@ -62,7 +62,7 @@ const oatpp::Type::Properties* DynamicClass::PolymorphicDispatcher::getPropertie
     for(int i = 0; i < fieldCount; i++) {
       const google::protobuf::FieldDescriptor* field = desc->field(i);
       auto& objField = objPtr->m_fields[i];
-      oatpp::Type::Property* prop = new oatpp::Type::Property(i * sizeof(oatpp::Void), field->name().c_str(), objField.valueType);
+      auto prop = new oatpp::data::mapping::type::BaseObject::Property(i * sizeof(oatpp::Void), field->name().c_str(), objField.valueType);
       m_class->m_properties->pushBack(prop);
     }
 
@@ -70,6 +70,23 @@ const oatpp::Type::Properties* DynamicClass::PolymorphicDispatcher::getPropertie
 
   return m_class->m_properties;
 
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Dynamic Class | VectorPolymorphicDispatcher
+
+DynamicClass::VectorPolymorphicDispatcher::VectorPolymorphicDispatcher(DynamicClass* clazz)
+  : m_class(clazz)
+{}
+
+oatpp::Void DynamicClass::VectorPolymorphicDispatcher::createObject() const {
+  return oatpp::Void(std::make_shared<std::vector<AbstractDynamicObject>>(), m_class->getVectorType());
+}
+
+void DynamicClass::VectorPolymorphicDispatcher::addPolymorphicItem(const oatpp::Void& object, const oatpp::Void& item) const {
+  const auto& vector = object.staticCast<oatpp::Vector<AbstractDynamicObject>>();
+  AbstractDynamicObject vectorItem(std::static_pointer_cast<DynamicObject>(item.getPtr()), m_class->getType());
+  vector->push_back(vectorItem);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,6 +99,7 @@ DynamicClass::DynamicClass(const std::string& name)
   : m_name(name)
   , m_type(nullptr)
   , m_properties(nullptr)
+  , m_vectorType(nullptr)
 {}
 
 DynamicClass* DynamicClass::registryGetClass(const std::string& name) {
@@ -116,7 +134,7 @@ std::shared_ptr<Message> DynamicClass::createProto() const {
 }
 
 const oatpp::Type* DynamicClass::getType() {
-  std::lock_guard<std::mutex> lock(m_mutex);
+  std::lock_guard<std::mutex> lock(m_typeMutex);
   if(m_type == nullptr) {
     m_type = new oatpp::Type(
       oatpp::data::mapping::type::__class::AbstractObject::CLASS_ID,
@@ -126,6 +144,19 @@ const oatpp::Type* DynamicClass::getType() {
     );
   }
   return m_type;
+}
+
+const oatpp::Type* DynamicClass::getVectorType() {
+  std::lock_guard<std::mutex> lock(m_typeVectorMutex);
+  if(m_vectorType == nullptr) {
+    m_vectorType = new oatpp::Type(
+      oatpp::data::mapping::type::__class::AbstractVector::CLASS_ID,
+      nullptr,
+      new VectorPolymorphicDispatcher(this)
+    );
+    m_vectorType->params.push_back(getType());
+  }
+  return m_vectorType;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
