@@ -5,7 +5,7 @@
 
 Protobuf messages integration with oatpp object-mapping framework.
 
-Now you can use protobuf messages as a regular oatpp DTOs!
+Now you can use protobuf messages as regular oatpp DTOs!
 
 
 More about Oat++:
