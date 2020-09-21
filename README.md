@@ -7,6 +7,12 @@ Protobuf messages integration with oatpp object-mapping framework.
 
 Now you can use protobuf messages as a regular oatpp DTOs!
 
+
+More about Oat++:
+
+- [Oat++ Website](https://oatpp.io/)
+- [Oat++ Github Repository](https://github.com/oatpp/oatpp)
+
 ## Usage
 
 Let's say we have a .proto file:
@@ -40,7 +46,7 @@ ENDPOINT("POST", "createUser", createUser,
 ```cpp
 ENDPOINT("GET", "getUser", getUser) 
 {
-  oatpp::protobuf::Object<test::User> user = std::make_shared<test::User>();
+  oatpp::protobuf::Object<User> user = std::make_shared<User>();
   user->set_name("Ivan");
   user->set_role(User_Role_GUEST);
   return createDtoResponse(Status::CODE_200, user);
