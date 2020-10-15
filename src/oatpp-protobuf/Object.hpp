@@ -31,6 +31,9 @@ namespace oatpp { namespace protobuf {
 
 namespace __class {
 
+  /**
+   * Abstract proto object.
+   */
   class AbstractObject {
   public:
     static const oatpp::ClassId CLASS_ID;
@@ -40,6 +43,9 @@ namespace __class {
   class Object;
 }
 
+/**
+ * Proto object.
+ */
 template <class T>
 using Object = oatpp::data::mapping::type::ObjectWrapper<T, __class::Object<T>>;
 

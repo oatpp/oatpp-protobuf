@@ -31,6 +31,9 @@ namespace oatpp { namespace protobuf { namespace reflection {
 
 class DynamicObject; // FWD
 
+/**
+ * A dynamic class that will be automatically generated for the proto object.
+ */
 class DynamicClass {
   friend DynamicObject;
 private:
@@ -38,6 +41,9 @@ private:
   static std::unordered_map<std::string, DynamicClass*> REGISTRY;
 public:
 
+  /**
+   * Polymorphic Dispatcher
+   */
   class PolymorphicDispatcher : public oatpp::data::mapping::type::__class::AbstractObject::PolymorphicDispatcher {
   private:
     DynamicClass* m_class;
@@ -51,6 +57,9 @@ public:
 
 public:
 
+  /**
+   * Vector Polymorphic Dispatcher
+   */
   class VectorPolymorphicDispatcher : public oatpp::data::mapping::type::__class::AbstractVector::PolymorphicDispatcher {
   private:
     DynamicClass* m_class;
@@ -74,23 +83,53 @@ private:
   DynamicClass(const std::string& name);
 public:
 
+  /**
+   * Get class by name of the proto object type.
+   * @param name
+   * @return
+   */
   static DynamicClass* registryGetClass(const std::string& name);
 
+  /**
+   * Get class for proto object type.
+   * @tparam T
+   * @return
+   */
   template<class T>
   static DynamicClass* registryGetClass() {
     const google::protobuf::Descriptor* desc = T::GetDescriptor();
     return registryGetClass(desc->full_name());
   }
 
+  /**
+   * Get class name.
+   * @return
+   */
   const std::string getName() const;
 
+  /**
+   * Instantiate shared proto object.
+   * @return
+   */
   std::shared_ptr<Message> createProto() const;
 
+  /**
+   * Get &id:oatpp::Type; of this class.
+   * @return
+   */
   const oatpp::Type* getType();
+
+  /**
+   * Get &id:oatpp::Type; of `oatpp::Vector<This-Class>`
+   * @return
+   */
   const oatpp::Type* getVectorType();
 
 };
 
+/**
+ * A dynamic oatpp object that will be created from the proto object.
+ */
 class DynamicObject : public oatpp::BaseObject {
   friend DynamicClass;
 private:
@@ -104,11 +143,20 @@ private:
   void initFromProto(const Message& proto);
 public:
 
+  /**
+   * Create shared.
+   * @param proto
+   * @return
+   */
   static std::shared_ptr<DynamicObject> createShared(const Message& proto);
 
   void cloneToProto(Message& proto) const;
   std::shared_ptr<Message> toProto() const;
 
+  /**
+   * Get a &l:DynamicClass; of this object.
+   * @return
+   */
   DynamicClass* getClass() const;
 
 };
