@@ -38,13 +38,13 @@ public:
 
     {
       auto config = mapper.getSerializer()->getConfig();
-      config->enableInterpretations = {"protobuf"};
+      config->enabledInterpretations = {"protobuf"};
       config->useBeautifier = true;
     }
 
     {
       auto config = mapper.getDeserializer()->getConfig();
-      config->enableInterpretations = {"protobuf"};
+      config->enabledInterpretations = {"protobuf"};
     }
 
     auto json1 = mapper.writeToString(req);
