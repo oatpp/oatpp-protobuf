@@ -26,7 +26,7 @@
 #define oatpp_protobuf_reflection_Utils_hpp
 
 #include "oatpp/core/Types.hpp"
-#include <google/protobuf/Message.h>
+#include <google/protobuf/message.h>
 
 namespace oatpp { namespace protobuf { namespace reflection {
 
