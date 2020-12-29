@@ -25,7 +25,7 @@ target_link_oatpp(module-tests)
 set(PROTOLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/protolib)
 
 execute_process(
-        COMMAND bash "${PROTOLIB_DIR}/update_protolib.sh" "${PROTOLIB_DIR}"
+        COMMAND sh "${PROTOLIB_DIR}/update_protolib.sh" "${PROTOLIB_DIR}"
 )
 
 target_include_directories(module-tests
