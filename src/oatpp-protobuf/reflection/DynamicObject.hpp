@@ -31,6 +31,8 @@ namespace oatpp { namespace protobuf { namespace reflection {
 
 class DynamicObject; // FWD
 
+typedef oatpp::data::mapping::type::ObjectWrapper<DynamicObject, oatpp::Void::Class> AbstractDynamicObject;
+
 /**
  * A dynamic class that will be automatically generated for the proto object.
  */
@@ -60,16 +62,17 @@ public:
   /**
    * Vector Polymorphic Dispatcher
    */
-  class VectorPolymorphicDispatcher : public oatpp::data::mapping::type::__class::AbstractVector::PolymorphicDispatcher {
+  class VectorPolymorphicDispatcher : public oatpp::data::mapping::type::__class::Collection::PolymorphicDispatcher {
   private:
     DynamicClass* m_class;
   public:
-
     VectorPolymorphicDispatcher(DynamicClass* clazz);
 
     oatpp::Void createObject() const override;
-    void addPolymorphicItem(const oatpp::Void& object, const oatpp::Void& item) const override;
-
+    const oatpp::Type* getItemType() const override;
+    void addItem(const oatpp::Void& object, const oatpp::Void& item) const override;
+    v_int64 getCollectionSize(const oatpp::Void& object) const override;
+    std::unique_ptr<oatpp::data::mapping::type::__class::Collection::Iterator> beginIteration(const oatpp::Void& object) const override;
   };
 
 private:
@@ -160,8 +163,6 @@ public:
   DynamicClass* getClass() const;
 
 };
-
-typedef oatpp::data::mapping::type::ObjectWrapper<DynamicObject, oatpp::Void::Class> AbstractDynamicObject;
 
 template<>
 struct TypeHelper <Message> {

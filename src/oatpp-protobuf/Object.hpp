@@ -59,7 +59,7 @@ namespace __class {
     public:
 
       oatpp::Void toInterpretation(const Void& originalValue) const override {
-        const auto& value = originalValue.staticCast<oatpp::protobuf::Object<T>>();
+        const auto& value = originalValue.cast<oatpp::protobuf::Object<T>>();
         auto ptr = reflection::DynamicObject::createShared(*value.getPtr());
         return oatpp::Void(ptr, ptr->getClass()->getType());
       }
@@ -80,15 +80,19 @@ namespace __class {
 
     };
 
+    static oatpp::Type createType() {
+        Type::Info info;
+        info.interpretationMap["protobuf"] = new Inter();
+        return oatpp::Type(
+                CLASS_ID,
+                info
+        );
+    }
+
   public:
 
     static oatpp::Type* getType(){
-      static Type type(
-        CLASS_ID, nullptr, nullptr,
-        {
-          {"protobuf", new Inter()}
-        }
-      );
+      static oatpp::Type type = createType();
       return &type;
     }
 
