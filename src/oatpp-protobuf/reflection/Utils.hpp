@@ -64,13 +64,13 @@ public:
   static void setProtoField(const Reflection* refl, const FieldDescriptor* field, Message* proto, const oatpp::Void& value) {
 
     if(field->is_repeated()) {
-      const auto& arr = value.staticCast<oatpp::Vector<typename TypeHelper<CT>::StaticType>>();
+      const auto &arr = value.cast<oatpp::Vector<typename TypeHelper<CT>::StaticType>>();
       refl->ClearField(proto, field);
       for(auto& val : *arr) {
         TypeHelper<CT>::addArrayItem(refl, field, proto, val);
       }
     } else {
-      const auto& val = value.staticCast<typename TypeHelper<CT>::StaticType>();
+      const auto& val = value.cast<typename TypeHelper<CT>::StaticType>();
       TypeHelper<CT>::setFieldValue(refl, field, proto, val);
     }
 
@@ -85,21 +85,19 @@ struct TypeHelper <std::string> {
   typedef oatpp::String StaticType;
 
   static void setFieldValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, const StaticType& value) {
-    refl->SetString(proto, field, value->std_str());
+    refl->SetString(proto, field, *value);
   }
 
   static StaticType getFieldValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
-    const auto& str = refl->GetString(proto, field);
-    return StaticType(str.data(), str.size(), true);
+    return refl->GetString(proto, field);
   }
 
   static void addArrayItem(const Reflection* refl, const FieldDescriptor* field, Message* proto, const StaticType& value) {
-    refl->AddString(proto, field, value->std_str());
+    refl->AddString(proto, field, *value);
   }
 
   static StaticType getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
-    const auto& str = refl->GetRepeatedString(proto, field, index);
-    return StaticType(str.data(), str.size(), true);
+    return refl->GetRepeatedString(proto, field, index);
   }
 
   static const oatpp::Type* getDynamicType( const FieldDescriptor* field) {
@@ -359,27 +357,25 @@ struct TypeHelper <EnumDescriptor> {
   typedef oatpp::String StaticType;
 
   static void setFieldValue(const Reflection* refl, const FieldDescriptor* field, Message* proto, const StaticType& value) {
-    const auto& val = value.staticCast<oatpp::String>();
+    const auto& val = value.cast<oatpp::String>();
     const google::protobuf::EnumDescriptor* ed = field->enum_type();
-    refl->SetEnum(proto, field, ed->FindValueByName(val->std_str()));
+    refl->SetEnum(proto, field, ed->FindValueByName(*val));
   }
 
   static StaticType getFieldValue(const Reflection* refl, const FieldDescriptor* field, const Message& proto) {
     const google::protobuf::EnumValueDescriptor* evd = refl->GetEnum(proto, field);
-    const auto& name = evd->name();
-    return oatpp::String(name.data(), name.size(), true);
+    return evd->name();
   }
 
   static void addArrayItem(const Reflection* refl, const FieldDescriptor* field, Message* proto, const StaticType& value) {
-    const auto& val = value.staticCast<oatpp::String>();
+    const auto& val = value.cast<oatpp::String>();
     const google::protobuf::EnumDescriptor* ed = field->enum_type();
-    refl->AddEnum(proto, field, ed->FindValueByName(val->std_str()));
+    refl->AddEnum(proto, field, ed->FindValueByName(*val));
   }
 
   static StaticType getArrayItem(const Reflection* refl, const FieldDescriptor* field, const Message& proto, int index) {
     const google::protobuf::EnumValueDescriptor* evd = refl->GetRepeatedEnum(proto, field, index);
-    const auto& name = evd->name();
-    return oatpp::String(name.data(), name.size(), true);
+    return evd->name();
   }
 
   static const oatpp::Type* getDynamicType( const FieldDescriptor* field) {

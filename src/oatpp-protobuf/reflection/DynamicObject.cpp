@@ -62,7 +62,7 @@ const oatpp::data::mapping::type::BaseObject::Properties* DynamicClass::Polymorp
     for(int i = 0; i < fieldCount; i++) {
       const google::protobuf::FieldDescriptor* field = desc->field(i);
       auto& objField = objPtr->m_fields[i];
-      auto prop = new oatpp::data::mapping::type::BaseObject::Property(i * sizeof(oatpp::Void), field->name().c_str(), objField.valueType);
+      auto prop = new oatpp::data::mapping::type::BaseObject::Property(i * sizeof(oatpp::Void), field->name().c_str(), objField.getValueType());
       m_class->m_properties->pushBack(prop);
     }
 
@@ -83,10 +83,29 @@ oatpp::Void DynamicClass::VectorPolymorphicDispatcher::createObject() const {
   return oatpp::Void(std::make_shared<std::vector<AbstractDynamicObject>>(), m_class->getVectorType());
 }
 
-void DynamicClass::VectorPolymorphicDispatcher::addPolymorphicItem(const oatpp::Void& object, const oatpp::Void& item) const {
-  const auto& vector = object.staticCast<oatpp::Vector<AbstractDynamicObject>>();
+const oatpp::Type *DynamicClass::VectorPolymorphicDispatcher::getItemType() const {
+  return m_class->getType();
+}
+
+v_int64 DynamicClass::VectorPolymorphicDispatcher::getCollectionSize(const oatpp::Void &object) const {
+  const auto &vector = object.cast<oatpp::Vector<AbstractDynamicObject>>();
+  return vector->size();
+}
+
+void DynamicClass::VectorPolymorphicDispatcher::addItem(const oatpp::Void& object, const oatpp::Void& item) const {
+
+  const auto &vector = object.cast<oatpp::Vector<AbstractDynamicObject>>();
   AbstractDynamicObject vectorItem(std::static_pointer_cast<DynamicObject>(item.getPtr()), m_class->getType());
   vector->push_back(vectorItem);
+}
+
+std::unique_ptr<oatpp::data::mapping::type::__class::Collection::Iterator> DynamicClass::VectorPolymorphicDispatcher::beginIteration(const oatpp::Void &object) const {
+  using Iterator = oatpp::data::mapping::type::__class::StandardCollection<std::vector<AbstractDynamicObject>, AbstractDynamicObject, void>::Iterator;
+  const auto &vector = object.cast<oatpp::Vector<AbstractDynamicObject>>();
+  std::unique_ptr<Iterator> iterator(new Iterator());
+  iterator->iterator = vector->begin();
+  iterator->end = vector->end();
+  return iterator;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,11 +155,11 @@ std::shared_ptr<Message> DynamicClass::createProto() const {
 const oatpp::Type* DynamicClass::getType() {
   std::lock_guard<std::mutex> lock(m_typeMutex);
   if(m_type == nullptr) {
+    Type::Info info;
+    info.nameQualifier = m_name.c_str();
+    info.polymorphicDispatcher = new PolymorphicDispatcher(this);
     m_type = new oatpp::Type(
-      oatpp::data::mapping::type::__class::AbstractObject::CLASS_ID,
-      m_name.c_str(),
-      new PolymorphicDispatcher(this),
-      {}
+      oatpp::data::mapping::type::__class::AbstractObject::CLASS_ID, info
     );
   }
   return m_type;
@@ -149,12 +168,15 @@ const oatpp::Type* DynamicClass::getType() {
 const oatpp::Type* DynamicClass::getVectorType() {
   std::lock_guard<std::mutex> lock(m_typeVectorMutex);
   if(m_vectorType == nullptr) {
+    Type::Info info;
+    info.polymorphicDispatcher = new VectorPolymorphicDispatcher(this);
+    info.params.push_back(getType());
+    info.isCollection = true;
+    info.parent = Vector<AbstractDynamicObject>::Class::getType();
     m_vectorType = new oatpp::Type(
       oatpp::data::mapping::type::__class::AbstractVector::CLASS_ID,
-      nullptr,
-      new VectorPolymorphicDispatcher(this)
+      info
     );
-    m_vectorType->params.push_back(getType());
   }
   return m_vectorType;
 }
